@@ -10,7 +10,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-black/70" />
         <div className="relative z-10 text-center text-white px-6">
           <h1 className="text-5xl md:text-7xl font-bold mb-4">Alex Lopes</h1>
-          <p className="text-xl md:text-3xl mb-8">Barbearia Premium</p>
+          <p className="text-xl md:text-3xl mb-8">O melhor local para mudar seu visual</p>
           <div className="flex items-center justify-center gap-2 text-lg">
             <Scissors className="w-6 h-6" />
             <span>Corte | Barba | Acabamento</span>
