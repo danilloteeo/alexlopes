@@ -53,10 +53,10 @@ const services = [
 
 const barbers = [
   "Alex Lopes",
-  "João Silva",
-  "Carlos Mendes",
-  "Rafael Costa",
-  "Lucas Oliveira",
+  "Ramon Silva",
+  "Eduardo Freitas",
+  "Daniel Moreira",
+  "Gleyverson Lopes",
 ];
 
 const availableTimes = [
