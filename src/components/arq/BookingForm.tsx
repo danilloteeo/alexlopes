@@ -1,6 +1,7 @@
+// src/components/BookingForm.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Calendar } from "@/components/ui/calendar";
@@ -13,235 +14,170 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2 } from "lucide-react";
+import { Loader2, Scissors, Clock, User, Phone } from "lucide-react";
 
-// Firebase
-import { auth, db } from "@/lib/firebase";
-import { useAuthState } from "react-firebase-hooks/auth";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
-
-const formSchema = z.object({
-  name: z.string().min(3, "Nome muito curto"),
-  phone: z
-    .string()
-    .min(14, "Telefone incompleto")
-    .refine((val) => /^\(\d{2}\) \d{4,5}-\d{4}$/.test(val), {
-      message: "Telefone inválido",
-    }),
-  barber: z.string().min(1, "Escolha um barbeiro"),
-  service: z.string().min(1, "Escolha um serviço"),
-  date: z.instanceof(Date, { message: "Escolha uma data válida" }).refine(
-    (date) => date >= new Date(new Date().setHours(0, 0, 0, 0)),
-    { message: "Não é possível agendar no passado" }
-  ),
-  time: z.string().min(1, "Escolha um horário"),
-});
-
-type FormData = z.infer<typeof formSchema>;
-
-const services = [
-  { value: "corte", label: "Corte de Cabelo - R$ 70" },
-  { value: "barba", label: "Barba Completa - R$ 50" },
-  { value: "combo", label: "Corte + Barba - R$ 110" },
-  { value: "sobrancelha", label: "Sobrancelha - R$ 25" },
-  { value: "pigmentacao", label: "Pigmentação - R$ 120" },
-];
-
-const barbers = [
-  "Alex Lopes",
-  "Ramon Silva",
-  "Eduardo Freitas",
-  "Daniel Moreira",
-  "Gleyverson Lopes",
-];
-
-const availableTimes = [
-  "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
-  "14:00", "14:30", "15:00", "15:30", "16:00", "16:30",
-  "17:00", "17:30", "18:00", "18:30", "19:00", "19:30",
-];
+const barbers = ["Alex Lopes", "Ramon Silva", "Gleyve Lopes", "Daniel Moreira", "Eduard Freitas"];
+const services = ["Corte de Cabelo", "Barba Completa", "Corte + Barba", "Sobrancelha", "Pigmentação"];
+const times = ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00"];
 
 export default function BookingForm() {
-  const [user, loadingAuth] = useAuthState(auth);
+  const [barber, setBarber] = useState("");
+  const [service, setService] = useState("");
   const [date, setDate] = useState<Date | undefined>(undefined);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [time, setTime] = useState("");
+  const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    setValue,
-  } = useForm<FormData>({
-    resolver: zodResolver(formSchema),
-  });
+  const canShowCalendar = barber && service;
 
-  // Máscara de telefone
-  const formatPhone = (value: string) => {
-    const numbers = value.replace(/\D/g, "").slice(0, 11);
-    if (numbers.length <= 2) return numbers;
-    if (numbers.length <= 7)
-      return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
-    return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7)}`;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!date || !time) return;
+
+    setLoading(true);
+    // Aqui você coloca seu Firebase ou webhook
+    await new Promise(r => setTimeout(r, 1000)); // simula envio
+
+    toast.success("Horário agendado com sucesso!", {
+      description: `${name}, seu horário está confirmado para ${format(date, "dd 'de' MMMM", { locale: ptBR })} às ${time} com ${barber}.`,
+    });
+
+    // Reset
+    setBarber(""); setService(""); setDate(undefined); setTime(""); setName(""); setPhone("");
+    setLoading(false);
   };
-
-  const onSubmit = async (data: FormData) => {
-    setIsSubmitting(true);
-
-    try {
-      if (user) {
-        await setDoc(doc(db, "appointments", `${user.uid}_${Date.now()}`), {
-          ...data,
-          userId: user.uid,
-          userName: user.displayName || user.email,
-          userEmail: user.email,
-          createdAt: serverTimestamp(),
-          status: "confirmado",
-        });
-      }
-
-      toast.success("Agendamento confirmado!", {
-        description: `${data.name}, seu horário com ${data.barber} foi marcado para ${format(data.date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })} às ${data.time}. Entraremos em contato via WhatsApp!`,
-        duration: 10000,
-        action: {
-          label: "Abrir WhatsApp",
-          onClick: () => window.open(`https://wa.me/5511987654321?text=Olá! Fiz meu agendamento para ${format(data.date, "dd/MM")} às ${data.time} com ${data.barber}`),
-        },
-      });
-    } catch (error) {
-      toast.error("Erro ao salvar. Tente novamente.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  useEffect(() => {
-    if (user && !loadingAuth) {
-      setValue("name", user.displayName || "");
-    }
-  }, [user, loadingAuth, setValue]);
 
   return (
-    <Card className="p-8 bg-background/95 shadow-xl">
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {/* Nome */}
-        <div className="grid md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium mb-2">Nome completo</label>
-            <input
-              {...register("name")}
-              className="w-full px-4 py-3 rounded-lg border bg-background"
-              placeholder="João Silva"
-              defaultValue={user?.displayName || ""}
-            />
-            {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
-          </div>
-
-          {/* Telefone com máscara */}
-          <div>
-            <label className="block text-sm font-medium mb-2">Telefone (WhatsApp)</label>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => {
-                const formatted = formatPhone(e.target.value);
-                setPhone(formatted);
-                setValue("phone", formatted);
-              }}
-              placeholder="(11) 98765-4321"
-              maxLength={15}
-              className="w-full px-4 py-3 rounded-lg border bg-background focus:ring-2 focus:ring-primary focus:border-transparent transition"
-            />
-            {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone.message}</p>}
-          </div>
+    <Card className="p-8 bg-white/5 backdrop-blur-xl border-white/10">
+      <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Barbeiro */}
+        <div className="space-y-3">
+          <Label className="text-lg text-white flex items-center gap-2">
+            <Scissors className="w-5 h-5 text-green-400" />
+            Escolha o barbeiro
+          </Label>
+          <Select value={barber} onValueChange={setBarber}>
+            <SelectTrigger className="h-14 bg-white/10 border-white/20 text-white">
+              <SelectValue placeholder="Selecione o profissional" />
+            </SelectTrigger>
+            <SelectContent>
+              {barbers.map(b => (
+                <SelectItem key={b} value={b}>{b}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        {/* Barbeiro e Serviço */}
-        <div className="grid md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium mb-2">Barbeiro</label>
-            <Select onValueChange={(v) => setValue("barber", v)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Escolha o barbeiro" />
+        {/* Serviço */}
+        {barber && (
+          <div className="space-y-3">
+            <Label className="text-lg text-white flex items-center gap-2">
+              <Clock className="w-5 h-5 text-green-400" />
+              Escolha o serviço
+            </Label>
+            <Select value={service} onValueChange={setService}>
+              <SelectTrigger className="h-14 bg-white/10 border-white/20 text-white">
+                <SelectValue placeholder="Qual serviço deseja?" />
               </SelectTrigger>
               <SelectContent>
-                {barbers.map((b) => (
-                  <SelectItem key={b} value={b}>{b}</SelectItem>
+                {services.map(s => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            {errors.barber && <p className="text-red-500 text-sm mt-1">{errors.barber.message}</p>}
           </div>
+        )}
 
-          <div>
-            <label className="block text-sm font-medium mb-2">Serviço</label>
-            <Select onValueChange={(v) => setValue("service", v)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Escolha o serviço" />
-              </SelectTrigger>
-              <SelectContent>
-                {services.map((s) => (
-                  <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+        {/* Calendário + Horário */}
+        {canShowCalendar && (
+          <div className="grid md:grid-cols-2 gap-8">
+            <div>
+              <Label className="text-white mb-3 block">Selecione a data</Label>
+              <Calendar
+                mode="single"
+                selected={date}
+                onSelect={setDate}
+                disabled={(d) => d < new Date() || d.getDay() === 0}
+                locale={ptBR}
+                className="rounded-xl border-white/20 bg-white/5"
+              />
+            </div>
+
+            <div>
+              <Label className="text-white mb-3 block">Horário disponível</Label>
+              <div className="grid grid-cols-3 gap-3">
+                {times.map(t => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setTime(t)}
+                    className={`h-12 rounded-lg font-medium transition ${time === t
+                        ? "bg-green-600 text-white"
+                        : "bg-white/10 hover:bg-white/20 text-white"
+                      }`}
+                  >
+                    {t}
+                  </button>
                 ))}
-              </SelectContent>
-            </Select>
-            {errors.service && <p className="text-red-500 text-sm mt-1">{errors.service.message}</p>}
+              </div>
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Data e Horário */}
-        <div className="grid md:grid-cols-2 gap-6 items-start">
-          <div>
-            <label className="block text-sm font-medium mb-2">Data</label>
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={(d) => {
-                setDate(d);
-                if (d) setValue("date", d);
-              }}
-              disabled={(date) => date < new Date() || date.getDay() === 0}
-              locale={ptBR}
-              className="rounded-md border"
-            />
-            {errors.date && <p className="text-red-500 text-sm mt-1">{errors.date.message}</p>}
+        {/* Dados pessoais */}
+        {date && time && (
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label className="text-white flex items-center gap-2">
+                <User className="w-5 h-5 text-green-400" />
+                Nome completo
+              </Label>
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="João Silva"
+                required
+                className="bg-white/10 border-white/20 text-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-white flex items-center gap-2">
+                <Phone className="w-5 h-5 text-green-400" />
+                WhatsApp
+              </Label>
+              <Input
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="(11) 98765-4321"
+                required
+                className="bg-white/10 border-white/20 text-white"
+              />
+            </div>
           </div>
+        )}
 
-          <div>
-            <label className="block text-sm font-medium mb-2">Horário</label>
-            <Select onValueChange={(v) => setValue("time", v)} disabled={!date}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o horário" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableTimes.map((time) => (
-                  <SelectItem key={time} value={time}>{time}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.time && <p className="text-red-500 text-sm mt-1">{errors.time.message}</p>}
-          </div>
-        </div>
-
-        <Button
-          type="submit"
-          size="lg"
-          disabled={isSubmitting}
-          className="w-full text-lg py-7 font-semibold"
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              Confirmando...
-            </>
-          ) : (
-            "Confirmar Agendamento"
-          )}
-        </Button>
+        {/* Botão */}
+        {date && time && name && phone && (
+          <Button
+            type="submit"
+            size="lg"
+            disabled={loading}
+            className="w-full h-16 text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="mr-3 h-6 w-6 animate-spin" />
+                Confirmando...
+              </>
+            ) : (
+              "Confirmar Agendamento"
+            )}
+          </Button>
+        )}
       </form>
     </Card>
   );

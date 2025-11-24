@@ -1,14 +1,13 @@
 // src/app/layout.tsx
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
-import { Toaster } from "@/components/ui/sonner"; // <- MUDANÇA AQUI
+import { Toaster } from "sonner";
+import Header from "@/components/arq/Header";
+import WelcomeAuthModal from "@/components/arq/WelcomeAuthModal";
+import FloatingWhatsApp from "@/components/arq/FloatingWhatsApp";
 
-const inter = Inter({ subsets: ["latin"] });
-
-export const metadata: Metadata = {
-  title: "Alex Lopes Barbearia",
-  description: "Agendamento online - Barbearia premium em São Paulo",
+export const metadata = {
+  title: "Alex Lopes Barbearia • Corte e Barba Premium em SP",
+  description: "Agende seu horário online com os melhores barbeiros da Vila Madalena.",
 };
 
 export default function RootLayout({
@@ -17,10 +16,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR" suppressHydrationWarning>
-      <body className={inter.className}>
-        {children}
-        <Toaster /> {/* <- Agora é do Sonner */}
+    <html lang="pt-BR">
+      <body className="bg-black text-white min-h-screen">
+        <Header />
+        
+        {/* Modal de login automático (só aparece se não estiver logado) */}
+        <WelcomeAuthModal />
+        
+        <main className="pt-20">{children}</main>
+        
+        <FloatingWhatsApp />
+        <Toaster position="top-center" richColors />
       </body>
     </html>
   );
