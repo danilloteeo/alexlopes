@@ -19,7 +19,7 @@ export default function Home() {
         <div className="relative z-10 text-center px-6 max-w-5xl mx-auto">
           <div className="inline-flex items-center gap-3 text-green-400 text-sm font-medium uppercase tracking-wider mb-6">
             <Scissors className="w-6 h-6" />
-            <span>Barbearia Premium em São Paulo</span>
+            <span>Barbearia em Água Quente</span>
           </div>
 
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-white leading-tight">
@@ -120,7 +120,7 @@ export default function Home() {
             <div className="order-1 lg:order-2">
               {(() => {
                 try {
-                  const BarbersGallery = require("@/components/BarbersGallery").default;
+                  const BarbersGallery = require("@/components/arq/BarbersGallery").default;
                   return (
                     <>
                       <h3 className="text-3xl font-bold text-white mb-8 flex items-center gap-3 justify-center lg:justify-start">
