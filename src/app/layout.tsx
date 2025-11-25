@@ -5,7 +5,7 @@ import FloatingWhatsApp from "@/components/FloatingWhatsApp";
 import { Toaster } from "sonner";
 
 export const metadata = {
-  title: "Alex Lopes Barbearia • Vila Madalena, São Paulo",
+  title: "Alex Lopes Barbearia",
   description: "A barbearia premium que todo homem merece. Corte perfeito, barba impecável.",
 };
 

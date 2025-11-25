@@ -78,7 +78,7 @@ export default function PerfilPage() {
           </h1>
           <p className="text-2xl text-green-400 flex items-center justify-center gap-2 mt-4">
             <Crown className="w-8 h-8" />
-            Cliente VIP
+            Cliente assinante
           </p>
         </div>
         {/* Próximos Agendamentos */}
